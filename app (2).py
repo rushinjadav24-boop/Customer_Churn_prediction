@@ -101,35 +101,3 @@ if predict_btn:
     imp_df      = pd.DataFrame({"Feature": feat_names, "Importance": feat_imp})
     imp_df      = imp_df.sort_values("Importance", ascending=False)
     st.bar_chart(imp_df.set_index("Feature"))
-
-# ── Batch Prediction ─────────────────────────────────────────
-st.divider()
-st.subheader("📂 Batch Prediction (Upload CSV)")
-uploaded = st.file_uploader("Upload a CSV file with the same columns as the training dataset", type=["csv"])
-
-if uploaded:
-    batch_df = pd.read_csv(uploaded)
-    st.write("Uploaded data preview:", batch_df.head())
-
-    try:
-        batch_proc = batch_df.copy()
-        if "Target" in batch_proc.columns:
-            batch_proc = batch_proc.drop("Target", axis=1)
-
-        batch_proc["FrequentFlyer"]             = batch_proc["FrequentFlyer"].map(FREQUENT_FLYER_MAP)
-        batch_proc["AnnualIncomeClass"]         = batch_proc["AnnualIncomeClass"].map(INCOME_MAP)
-        batch_proc["AccountSyncedToSocialMedia"] = batch_proc["AccountSyncedToSocialMedia"].map(SOCIAL_MAP)
-        batch_proc["BookedHotelOrNot"]          = batch_proc["BookedHotelOrNot"].map(HOTEL_MAP)
-
-        preds  = clf.predict(batch_proc)
-        probs  = clf.predict_proba(batch_proc)[:, 1]
-
-        batch_df["Churn_Prediction"] = preds
-        batch_df["Churn_Probability"] = probs.round(3)
-
-        st.success(f"Predictions complete! Churn detected in {preds.sum()} out of {len(preds)} customers.")
-        st.dataframe(batch_df)
-        st.download_button("⬇️ Download Results", batch_df.to_csv(index=False),
-                           "churn_predictions.csv", "text/csv")
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
